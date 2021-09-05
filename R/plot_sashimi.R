@@ -77,7 +77,8 @@ plot_sashimi <- function(junctions,
     coverage_chr_control = NULL,
     load_func = .coverage_load,
     binwidth = 100,
-    gene_tx_func = .gene_tx_type_get) {
+    gene_tx_func = .gene_tx_type_get,
+    include_control = TRUE) {
 
     ##### Load reference annotation #####
 
@@ -111,7 +112,8 @@ plot_sashimi <- function(junctions,
         digits,
         assay_name = assay_name,
         annot_colour,
-        count_label
+        count_label,
+        include_control = include_control
     )
 
     ##### Plot coverage #####
@@ -445,7 +447,8 @@ plot_sashimi <- function(junctions,
     digits,
     assay_name,
     annot_colour,
-    count_label) {
+    count_label,
+    include_control = TRUE) {
 
     # format junctions into df with count/type details
     junctions_to_plot <- .junctions_counts_type_get(
@@ -453,7 +456,8 @@ plot_sashimi <- function(junctions,
         case_id = case_id,
         sum_func = sum_func,
         digits = digits,
-        assay_name = assay_name
+        assay_name = assay_name,
+        include_control = include_control
     )
 
     # obtain points for curves of junctions
@@ -493,7 +497,8 @@ plot_sashimi <- function(junctions,
     case_id = list(samp_id = "samp_1"),
     sum_func = mean,
     digits = 2,
-    assay_name = "norm") {
+    assay_name = "norm",
+    include_control = TRUE) {
 
     # for R CMD Check
     index <- type <- . <- NULL
@@ -536,7 +541,7 @@ plot_sashimi <- function(junctions,
     }
 
     # aggregate and add counts for control samples
-    if (!is.null(sum_func)) {
+    if (!is.null(sum_func) & include_control) {
         which_control <- which(colData(junctions_to_plot)[["case_control"]] == "control")
 
         junctions_counts[["control"]] <-
