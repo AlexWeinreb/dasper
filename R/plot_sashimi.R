@@ -185,24 +185,6 @@ plot_sashimi <- function(junctions,
     return(gene_tx_list)
 }
 
-.gene_tx_wormbase <- function(gene_tx_id){
-    if (is.null(gene_tx_id) | length(gene_tx_id) != 1) {
-        stop("gene_tx_id must be set and be of length 1")
-    } else if (stringr::str_detect(gene_tx_id, "ENSG") | stringr::str_detect(gene_tx_id, "WBGene")) {
-        gene_tx_type <- "gene_id"
-    } else if (stringr::str_detect(gene_tx_id, "ENST")) {
-        gene_tx_type <- "tx_name"
-    } else {
-        stop("gene_tx_id does not include an ENST or ENSG prefix")
-    }
-    
-    # create named list of gene/tx id
-    # for filtering txdb
-    gene_tx_list <- list(gene_tx_id)
-    names(gene_tx_list) <- gene_tx_type
-    
-    return(gene_tx_list)
-}
 
 
 #' Obtain exons to be plotted
