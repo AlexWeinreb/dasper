@@ -76,7 +76,8 @@ plot_sashimi <- function(junctions,
     coverage_paths_control = NULL,
     coverage_chr_control = NULL,
     load_func = .coverage_load,
-    binwidth = 100) {
+    binwidth = 100,
+    gene_tx_func = .gene_tx_type_get) {
 
     ##### Load reference annotation #####
 
@@ -84,7 +85,7 @@ plot_sashimi <- function(junctions,
 
     ##### Obtain the exons and junctions to plot #####
 
-    gene_tx_list <- .gene_tx_type_get(gene_tx_id)
+    gene_tx_list <- gene_tx_func(gene_tx_id)
 
     exons_to_plot <- .exons_to_plot_get(ref, gene_tx_list, region)
 
@@ -183,6 +184,26 @@ plot_sashimi <- function(junctions,
 
     return(gene_tx_list)
 }
+
+.gene_tx_wormbase <- function(gene_tx_id){
+    if (is.null(gene_tx_id) | length(gene_tx_id) != 1) {
+        stop("gene_tx_id must be set and be of length 1")
+    } else if (stringr::str_detect(gene_tx_id, "ENSG") | stringr::str_detect(gene_tx_id, "WBGene")) {
+        gene_tx_type <- "gene_id"
+    } else if (stringr::str_detect(gene_tx_id, "ENST")) {
+        gene_tx_type <- "tx_name"
+    } else {
+        stop("gene_tx_id does not include an ENST or ENSG prefix")
+    }
+    
+    # create named list of gene/tx id
+    # for filtering txdb
+    gene_tx_list <- list(gene_tx_id)
+    names(gene_tx_list) <- gene_tx_type
+    
+    return(gene_tx_list)
+}
+
 
 #' Obtain exons to be plotted
 #'
