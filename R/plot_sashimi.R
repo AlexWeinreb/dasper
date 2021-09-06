@@ -21,6 +21,8 @@
 #' @param region a [GenomicRanges][GenomicRanges::GRanges-class] of length 1
 #'   that is used to filter the exons/junctions plotted. Only those that overlap
 #'   this region are plotted.
+#' @param region_strict if set to TRUE, only plot exons and junctions that fall
+#'   entirely within `region`.
 #' @param assay_name a character scalar with the name of the
 #'   `SummarizedExperiment::assay()` from which to obtain junction counts.
 #' @param annot_colour character vector length 7, representing the colours of
@@ -32,6 +34,8 @@
 #' @param load_func function used to load coverage.
 #' @param binwidth the number of bases to aggregate coverage across using
 #'   `sum_func` when plotting. .
+#' @param gene_tx_func function used to recognize genes vs transcripts.
+#' @param include_control plot the control sample.
 #'
 #' @return `ggplot` displaying the splicing (and coverage) surrounding the
 #'   transcript/region of interest.
@@ -64,6 +68,7 @@ plot_sashimi <- function(junctions,
     case_id = NULL,
     sum_func = mean,
     region = NULL,
+    region_strict = FALSE,
     assay_name = "norm",
     annot_colour = c(
         ggpubr::get_palette("jco", 1),
@@ -88,9 +93,9 @@ plot_sashimi <- function(junctions,
 
     gene_tx_list <- gene_tx_func(gene_tx_id)
 
-    exons_to_plot <- .exons_to_plot_get(ref, gene_tx_list, region)
+    exons_to_plot <- .exons_to_plot_get(ref, gene_tx_list, region, region_strict)
 
-    junctions_to_plot <- .junctions_to_plot_get(junctions, gene_tx_list, region)
+    junctions_to_plot <- .junctions_to_plot_get(junctions, gene_tx_list, region, region_strict)
 
     ##### Obtain co-ordinates to plot #####
 
@@ -208,7 +213,8 @@ plot_sashimi <- function(junctions,
 #' @noRd
 .exons_to_plot_get <- function(ref,
     gene_tx_list,
-    region) {
+    region,
+    region_strict) {
 
     # filter for exons of gene/tx of interest
     exons_to_plot <- GenomicFeatures::exons(ref, filter = gene_tx_list)
@@ -221,10 +227,20 @@ plot_sashimi <- function(junctions,
         if (!is(region, "GenomicRanges") | length(region) != 1) {
             stop("region must be a GenomicRanges object of length 1")
         }
-
-        exon_region_hits <- findOverlaps(query = exons_to_plot, subject = region)
+        
+        if(region_strict){
+            exon_region_hits <- findOverlaps(query = exons_to_plot,
+                                             subject = region,
+                                             type = "within")
+        } else{
+            exon_region_hits <- findOverlaps(query = exons_to_plot,
+                                             subject = region)
+        }
+        
         exons_to_plot <- exons_to_plot[S4Vectors::queryHits(exon_region_hits)]
     }
+    
+    
 
     if (length(exons_to_plot) == 0) {
         stop("No exons found to plot")
@@ -246,7 +262,7 @@ plot_sashimi <- function(junctions,
 #'
 #' @keywords internal
 #' @noRd
-.junctions_to_plot_get <- function(junctions, gene_tx_list, region) {
+.junctions_to_plot_get <- function(junctions, gene_tx_list, region, region_strict) {
     gene_tx <- gene_tx_list %>% unlist()
 
     # check the columns used are in a CharacterList format
@@ -271,9 +287,17 @@ plot_sashimi <- function(junctions,
 
     # keep only junctions that overlap your region of interest
     if (!is.null(region)) {
-        junctions_region_hits <- findOverlaps(query = junctions_to_plot, subject = region)
+        
+        if(region_strict){
+            junctions_region_hits <- findOverlaps(query = junctions_to_plot,
+                                                  subject = region,
+                                                  type = "within")
+        } else{
+            junctions_region_hits <- findOverlaps(query = junctions_to_plot, subject = region)
+        }
         junctions_to_plot <- junctions_to_plot[S4Vectors::queryHits(junctions_region_hits)]
     }
+    
 
     if (length(junctions_to_plot) == 0) {
         stop("No junctions found to plot")
